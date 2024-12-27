@@ -56,7 +56,8 @@ class FineTuner:
                 purpose='fine-tune'
             )
             print(f"File uploaded successfully. File ID: {response.id}")
-        return response.id, total_tokens
+            print(f"Total tokens in file: {total_tokens}")
+        return response.id
 
     def create_job(self, 
                   training_file: str,
