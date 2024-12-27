@@ -1,6 +1,8 @@
 from openai import OpenAI
 import os
 import json
+import tiktoken
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import time
 import pandas as pd
@@ -36,13 +38,25 @@ class FineTuner:
         Returns:
             File ID from OpenAI
         """
+        # Count tokens in the file
+        enc = tiktoken.get_encoding("cl100k_base")
+        total_tokens = 0
+        
+        with open(file_path, 'r') as f:
+            for line in f:
+                data = json.loads(line)
+                for message in data.get('messages', []):
+                    total_tokens += len(enc.encode(message.get('content', '')))
+        
+        print(f"Total tokens in training file: {total_tokens}")
+        
         with open(file_path, 'rb') as f:
             response = self.client.files.create(
                 file=f,
                 purpose='fine-tune'
             )
             print(f"File uploaded successfully. File ID: {response.id}")
-        return response.id
+        return response.id, total_tokens
 
     def create_job(self, 
                   training_file: str,
@@ -84,10 +98,24 @@ class FineTuner:
         """
         
         status = self.client.fine_tuning.jobs.retrieve(job_id)
-
-        print(f"Status: {status.status}")
-        print(f"Model: {status.model}")
-        print(status.hyperparameters)
+        
+        # Calculate estimated completion time
+        if hasattr(status, 'created_at') and hasattr(status, 'hyperparameters'):
+            start_time = datetime.fromtimestamp(status.created_at)
+            n_epochs = int(status.hyperparameters.n_epochs)
+            # Estimate: tokens/1000 * epochs = minutes
+            est_minutes = (status.trained_tokens / 1000) * n_epochs
+            est_completion = start_time + timedelta(minutes=est_minutes)
+            
+            print(f"Status: {status.status}")
+            print(f"Model: {status.model}")
+            print(f"Started at: {start_time}")
+            print(f"Estimated completion: {est_completion}")
+            print(status.hyperparameters)
+        else:
+            print(f"Status: {status.status}")
+            print(f"Model: {status.model}")
+            print(status.hyperparameters)
 
     def wait_for_job(self, job_id: str, poll_interval: int = 60) -> Dict:
         """
