@@ -15,21 +15,7 @@ class FineTuner:
         """Initialize with optional API key, otherwise uses env var"""
         self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
         self.training_tokens = {}  # Store token counts by file ID
-
-    # def prepare_chat_data(self, conversations: List[Dict[str, Any]], output_file: str) -> str:
-    #     """
-    #     Convert chat conversations to JSONL format for fine-tuning
-    #     Args:
-    #         conversations: List of conversation dicts with messages
-    #         output_file: Path to save JSONL file
-    #     Returns:
-    #         Path to created JSONL file
-    #     """
-    #     with open(output_file, 'w') as f:
-    #         for conv in conversations:
-    #             json.dump({"messages": conv["messages"]}, f)
-    #             f.write('\n')
-    #     return output_file
+        self.training_examples = {}
 
     def upload_file(self, file_path: str) -> str:
         """
@@ -56,7 +42,9 @@ class FineTuner:
             )
             print(f"File uploaded successfully. File ID: {response.id}")
             print(f"Total tokens in file: {total_tokens}")
+            print(f"Total examples in file: {len(f.readlines())}")
             self.training_tokens[response.id] = total_tokens
+            self.training_examples[response.id] = len(f.readlines())
         return response.id
 
     def create_job(self, 
@@ -115,10 +103,10 @@ class FineTuner:
             print(f"Estimated completion: {est_completion}")
         
         # Get latest training step
-        step_df, _ = self.get_training_metrics(job_id)
+        step_df = self.get_training_metrics(job_id)
         if not step_df.empty:
             latest_step = step_df['step'].max()
-            total_steps = status.trained_tokens
+            total_steps = n_epochs * self.training_examples[training_file]
             if total_steps:
                 print(f"Training progress: Step {latest_step}/{total_steps}")
                 
@@ -155,7 +143,6 @@ class FineTuner:
         """
         events = self.client.fine_tuning.jobs.list_events(job_id)
         step_metrics = []
-        epoch_metrics = []
         
         for event in events:
             if hasattr(event, 'data') and event.data is not None:
@@ -168,16 +155,8 @@ class FineTuner:
                         'train_mean_token_accuracy': data.get('train_mean_token_accuracy', None),
                         'valid_mean_token_accuracy': data.get('valid_mean_token_accuracy', None)
                     })
-                if data.get('epoch') is not None:  # Epoch metrics
-                    epoch_metrics.append({
-                        'epoch': data.get('epoch', None),
-                        'train_loss': data.get('train_loss', None),
-                        'valid_loss': data.get('valid_loss', None),
-                        'train_mean_token_accuracy': data.get('train_mean_token_accuracy', None),
-                        'valid_mean_token_accuracy': data.get('valid_mean_token_accuracy', None)
-                    })
         
-        return pd.DataFrame(step_metrics), pd.DataFrame(epoch_metrics)
+        return pd.DataFrame(step_metrics)
 
     def plot_training_metrics(self, job_id: str, figsize: tuple = (12, 6)) -> None:
         """
