@@ -14,6 +14,7 @@ class FineTuner:
     def __init__(self, api_key: Optional[str] = None):
         """Initialize with optional API key, otherwise uses env var"""
         self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+        self.training_tokens = {}  # Store token counts by file ID
 
     # def prepare_chat_data(self, conversations: List[Dict[str, Any]], output_file: str) -> str:
     #     """
@@ -57,6 +58,7 @@ class FineTuner:
             )
             print(f"File uploaded successfully. File ID: {response.id}")
             print(f"Total tokens in file: {total_tokens}")
+            self.training_tokens[response.id] = total_tokens
         return response.id
 
     def create_job(self, 
@@ -101,19 +103,15 @@ class FineTuner:
         status = self.client.fine_tuning.jobs.retrieve(job_id)
         
         # Calculate estimated completion time
-        if hasattr(status, 'created_at') and hasattr(status, 'hyperparameters'):
+        if hasattr(status, 'created_at'):
             start_time = datetime.fromtimestamp(status.created_at)
             
-            # Handle 'auto' epochs setting
-            n_epochs = status.hyperparameters.n_epochs
-            if n_epochs == 'auto':
-                n_epochs = 3  # Default estimate for auto mode
-            else:
-                n_epochs = int(n_epochs)
-                
-            # Estimate: tokens/1000 * epochs = minutes
-            if hasattr(status, 'trained_tokens'):
-                est_minutes = (status.trained_tokens / 1000) * n_epochs
+            # Get training file ID and look up token count
+            training_file = status.training_file
+            if training_file in self.training_tokens:
+                total_tokens = self.training_tokens[training_file]
+                # Estimate: tokens/1000 = minutes (ignoring epochs for now)
+                est_minutes = total_tokens / 1000
                 est_completion = start_time + timedelta(minutes=est_minutes)
                 
                 print(f"Status: {status.status}")
@@ -124,7 +122,9 @@ class FineTuner:
                 print(f"Status: {status.status}")
                 print(f"Model: {status.model}")
                 print(f"Started at: {start_time}")
-            print(status.hyperparameters)
+            
+            if hasattr(status, 'hyperparameters'):
+                print(status.hyperparameters)
         else:
             print(f"Status: {status.status}")
             print(f"Model: {status.model}")
