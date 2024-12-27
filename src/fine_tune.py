@@ -104,7 +104,7 @@ class FineTuner:
             start_time = datetime.fromtimestamp(status.created_at)
             print(f"Started at: {start_time}")
         
-        if isinstance(status.hyperparameters.n_epochs, int):
+        if hasattr(status.hyperparameters, 'n_epochs') and isinstance(status.hyperparameters.n_epochs, int):
             n_epochs = status.hyperparameters.n_epochs
             training_file = status.training_file
             tokens = self.training_tokens[training_file]
@@ -116,9 +116,10 @@ class FineTuner:
         step_df = self.get_training_metrics(job_id)
         if not step_df.empty:
             latest_step = step_df['step'].max()
-            total_steps = n_epochs * self.training_examples[training_file]
-            if total_steps:
-                print(f"Training progress: Step {latest_step}/{total_steps}")
+            if hasattr(status.hyperparameters, 'n_epochs') and isinstance(status.hyperparameters.n_epochs, int):
+                total_steps = n_epochs * self.training_examples[training_file]
+                if total_steps:
+                    print(f"Training progress: Step {latest_step}/{total_steps}")
                 
         print(f"Hyperparameters: {status.hyperparameters}")
 
@@ -175,7 +176,7 @@ class FineTuner:
             job_id: ID of fine-tuning job
             figsize: Size of the figure (width, height)
         """
-        step_df, epoch_df = self.get_training_metrics(job_id)
+        step_df = self.get_training_metrics(job_id)
         
         plt.figure(figsize=figsize)
         
