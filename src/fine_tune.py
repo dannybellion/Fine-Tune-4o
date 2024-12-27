@@ -13,20 +13,20 @@ class FineTuner:
         """Initialize with optional API key, otherwise uses env var"""
         self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
-    def prepare_chat_data(self, conversations: List[Dict[str, Any]], output_file: str) -> str:
-        """
-        Convert chat conversations to JSONL format for fine-tuning
-        Args:
-            conversations: List of conversation dicts with messages
-            output_file: Path to save JSONL file
-        Returns:
-            Path to created JSONL file
-        """
-        with open(output_file, 'w') as f:
-            for conv in conversations:
-                json.dump({"messages": conv["messages"]}, f)
-                f.write('\n')
-        return output_file
+    # def prepare_chat_data(self, conversations: List[Dict[str, Any]], output_file: str) -> str:
+    #     """
+    #     Convert chat conversations to JSONL format for fine-tuning
+    #     Args:
+    #         conversations: List of conversation dicts with messages
+    #         output_file: Path to save JSONL file
+    #     Returns:
+    #         Path to created JSONL file
+    #     """
+    #     with open(output_file, 'w') as f:
+    #         for conv in conversations:
+    #             json.dump({"messages": conv["messages"]}, f)
+    #             f.write('\n')
+    #     return output_file
 
     def upload_training_file(self, file_path: str) -> str:
         """
