@@ -56,7 +56,8 @@ class FineTuner:
                   training_file: str,
                   model: str = "gpt-4o-mini-2024-07-18",
                   validation_file: Optional[str] = None,
-                  hyperparameters: Optional[Dict] = None) -> str:
+                  hyperparameters: Optional[Dict] = None,
+                  method: Optional[Dict] = None) -> str:
         """
         Create a fine-tuning job
         Args:
@@ -64,6 +65,7 @@ class FineTuner:
             model: Base model to fine-tune
             validation_file: Optional validation file ID
             hyperparameters: Optional dict of hyperparameters
+            method: Optional dict specifying fine-tuning method (e.g. DPO)
         Returns:
             Job ID
         """
@@ -77,6 +79,9 @@ class FineTuner:
             
         if hyperparameters:
             job_args["hyperparameters"] = hyperparameters
+
+        if method:
+            job_args["method"] = method
 
         response = self.client.fine_tuning.jobs.create(**job_args)
         print(f"Job created successfully. Job ID: {response.id}")
