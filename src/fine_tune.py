@@ -3,6 +3,8 @@ import os
 import json
 from typing import Optional, List, Dict, Any
 import time
+import pandas as pd
+import matplotlib.pyplot as plt
 
 class FineTuner:
     """Class to handle OpenAI fine-tuning operations"""
@@ -114,3 +116,62 @@ class FineTuner:
             Cancelled job details
         """
         return self.client.fine_tuning.jobs.cancel(job_id)
+
+    def get_training_metrics(self, job_id: str) -> pd.DataFrame:
+        """
+        Get training metrics for a fine-tuning job and return as DataFrame
+        Args:
+            job_id: ID of fine-tuning job
+        Returns:
+            DataFrame with training metrics
+        """
+        events = self.client.fine_tuning.jobs.list_events(job_id)
+        metrics_data = []
+        
+        for event in events:
+            if hasattr(event, 'data') and event.data is not None:
+                metrics_data.append({
+                    'step': event.data.get('step', None),
+                    'train_loss': event.data.get('train_loss', None),
+                    'valid_loss': event.data.get('valid_loss', None),
+                    'train_mean_token_accuracy': event.data.get('train_mean_token_accuracy', None),
+                    'valid_mean_token_accuracy': event.data.get('valid_mean_token_accuracy', None)
+                })
+        
+        return pd.DataFrame(metrics_data)
+
+    def plot_training_metrics(self, job_id: str, figsize: tuple = (12, 6)) -> None:
+        """
+        Plot training metrics for a fine-tuning job
+        Args:
+            job_id: ID of fine-tuning job
+            figsize: Size of the figure (width, height)
+        """
+        df = self.get_training_metrics(job_id)
+        
+        plt.figure(figsize=figsize)
+        
+        # Plot losses
+        plt.subplot(1, 2, 1)
+        plt.plot(df['step'], df['train_loss'], label='Training Loss')
+        plt.plot(df['step'], df['valid_loss'], label='Validation Loss')
+        plt.xlabel('Step')
+        plt.ylabel('Loss')
+        plt.title('Training and Validation Loss')
+        plt.legend()
+        plt.grid(True)
+        
+        # Plot accuracies
+        plt.subplot(1, 2, 2)
+        plt.plot(df['step'], df['train_mean_token_accuracy'], 
+                label='Training Accuracy')
+        plt.plot(df['step'], df['valid_mean_token_accuracy'], 
+                label='Validation Accuracy')
+        plt.xlabel('Step')
+        plt.ylabel('Token Accuracy')
+        plt.title('Training and Validation Accuracy')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.tight_layout()
+        plt.show()
