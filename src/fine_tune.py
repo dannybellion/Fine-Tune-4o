@@ -42,9 +42,14 @@ class FineTuner:
             )
             print(f"File uploaded successfully. File ID: {response.id}")
             print(f"Total tokens in file: {total_tokens}")
-            print(f"Total examples in file: {len(f.readlines())}")
+            
+            # Reset file pointer to beginning and count rows
+            f.seek(0)
+            total_examples = sum(1 for _ in f)
+            print(f"Total examples in file: {total_examples}")
+            
             self.training_tokens[response.id] = total_tokens
-            self.training_examples[response.id] = len(f.readlines())
+            self.training_examples[response.id] = total_examples
         return response.id
 
     def create_job(self, 
