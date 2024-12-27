@@ -41,6 +41,7 @@ class FineTuner:
                 file=f,
                 purpose='fine-tune'
             )
+            print(f"File uploaded successfully. File ID: {response.id}")
         return response.id
 
     def create_job(self, 
@@ -70,6 +71,7 @@ class FineTuner:
             job_args["hyperparameters"] = hyperparameters
 
         response = self.client.fine_tuning.jobs.create(**job_args)
+        print(f"Job created successfully. Job ID: {response.id}")
         return response.id
 
     def get_job_status(self, job_id: str) -> Dict:
@@ -80,7 +82,12 @@ class FineTuner:
         Returns:
             Job status details
         """
-        return self.client.fine_tuning.jobs.retrieve(job_id)
+        
+        status = self.client.fine_tuning.jobs.retrieve(job_id)
+
+        print(f"Status: {status.status}")
+        print(f"Model: {status.model}")
+        print(status.hyperparameters)
 
     def wait_for_job(self, job_id: str, poll_interval: int = 60) -> Dict:
         """
