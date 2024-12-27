@@ -113,23 +113,17 @@ class FineTuner:
             est_minutes = (tokens / 1000) * n_epochs
             est_completion = start_time + timedelta(minutes=est_minutes)
             print(f"Estimated completion: {est_completion}")
+        
+        # Get latest training step
+        step_df, _ = self.get_training_metrics(job_id)
+        if not step_df.empty:
+            latest_step = step_df['step'].max()
+            total_steps = status.trained_tokens
+            if total_steps:
+                print(f"Training progress: Step {latest_step}/{total_steps}")
                 
-        print(status.hyperparameters)
+        print(f"Hyperparameters: {status.hyperparameters}")
 
-    def wait_for_job(self, job_id: str, poll_interval: int = 60) -> Dict:
-        """
-        Wait for job completion, polling at specified interval
-        Args:
-            job_id: ID of fine-tuning job
-            poll_interval: Seconds between status checks
-        Returns:
-            Final job status
-        """
-        while True:
-            job = self.get_job_status(job_id)
-            if job.status in ["succeeded", "failed"]:
-                return job
-            time.sleep(poll_interval)
 
     def list_jobs(self, limit: int = 10) -> List[Dict]:
         """
@@ -185,7 +179,7 @@ class FineTuner:
         
         return pd.DataFrame(step_metrics), pd.DataFrame(epoch_metrics)
 
-    def plot_training_metrics(self, job_id: str, figsize: tuple = (12, 12)) -> None:
+    def plot_training_metrics(self, job_id: str, figsize: tuple = (12, 6)) -> None:
         """
         Plot training metrics for a fine-tuning job
         Args:
@@ -219,29 +213,6 @@ class FineTuner:
         plt.legend()
         plt.grid(True)
         
-        # Plot epoch-based metrics if available
-        if not epoch_df.empty:
-            # Loss by epoch
-            plt.subplot(2, 2, 3)
-            plt.plot(epoch_df['epoch'], epoch_df['train_loss'], label='Training Loss')
-            plt.plot(epoch_df['epoch'], epoch_df['valid_loss'], label='Validation Loss')
-            plt.xlabel('Epoch')
-            plt.ylabel('Loss')
-            plt.title('Loss by Epoch')
-            plt.legend()
-            plt.grid(True)
-            
-            # Accuracy by epoch
-            plt.subplot(2, 2, 4)
-            plt.plot(epoch_df['epoch'], epoch_df['train_mean_token_accuracy'], 
-                    label='Training Accuracy')
-            plt.plot(epoch_df['epoch'], epoch_df['valid_mean_token_accuracy'], 
-                    label='Validation Accuracy')
-            plt.xlabel('Epoch')
-            plt.ylabel('Token Accuracy')
-            plt.title('Accuracy by Epoch')
-            plt.legend()
-            plt.grid(True)
         
         plt.tight_layout()
         plt.show()
