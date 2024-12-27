@@ -1,0 +1,43 @@
+<purpose>
+Create a test dataset that will be used to fine tune a model
+</purpose>
+<instructions>
+    <instruction>Create 50 examples</instruction>
+    <instruction>the output should be in the correct format to be input into an openai fine tuning job</instruction>
+    <instruction>they are multi turn ranging between 4 and 10 turns</instruction>
+    <instruction>the conversation should be in English</instruction>
+    <instruction>include a mix of resolvable issues and ones requiring escalation</instruction>
+</instructions>
+
+<topics>
+    <common_issues>
+        <topic>billing inquiries and disputes</topic>
+        <topic>product returns and exchanges</topic>
+        <topic>account access problems</topic>
+        <topic>shipping status and delays</topic>
+        <topic>technical troubleshooting</topic>
+    </common_issues>
+    
+    <escalation_triggers>
+        <trigger>legal threats or complaints</trigger>
+        <trigger>requests for refunds above $500</trigger>
+        <trigger>account compromise or fraud</trigger>
+        <trigger>technical issues requiring engineer intervention</trigger>
+        <trigger>customer requesting supervisor</trigger>
+    </escalation_triggers>
+</topics>
+
+<conversation_elements>
+    <element>proper greeting and introduction</element>
+    <element>verification of customer identity when needed</element>
+    <element>clear problem identification</element>
+    <element>appropriate solution or escalation path</element>
+    <element>professional closing</element>
+</conversation_elements>
+
+<tone>
+    <attribute>professional but friendly</attribute>
+    <attribute>empathetic to customer concerns</attribute>
+    <attribute>clear and concise communication</attribute>
+    <attribute>solution-oriented</attribute>
+</tone>
