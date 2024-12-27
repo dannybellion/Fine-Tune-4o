@@ -152,61 +152,97 @@ class FineTuner:
         """
         return self.client.fine_tuning.jobs.cancel(job_id)
 
-    def get_training_metrics(self, job_id: str) -> pd.DataFrame:
+    def get_training_metrics(self, job_id: str) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Get training metrics for a fine-tuning job and return as DataFrame
+        Get training metrics for a fine-tuning job and return as DataFrames
         Args:
             job_id: ID of fine-tuning job
         Returns:
-            DataFrame with training metrics
+            Tuple of (step metrics DataFrame, epoch metrics DataFrame)
         """
         events = self.client.fine_tuning.jobs.list_events(job_id)
-        metrics_data = []
+        step_metrics = []
+        epoch_metrics = []
         
         for event in events:
             if hasattr(event, 'data') and event.data is not None:
-                metrics_data.append({
-                    'step': event.data.get('step', None),
-                    'train_loss': event.data.get('train_loss', None),
-                    'valid_loss': event.data.get('valid_loss', None),
-                    'train_mean_token_accuracy': event.data.get('train_mean_token_accuracy', None),
-                    'valid_mean_token_accuracy': event.data.get('valid_mean_token_accuracy', None)
-                })
+                data = event.data
+                if data.get('step') is not None:  # Step metrics
+                    step_metrics.append({
+                        'step': data.get('step', None),
+                        'train_loss': data.get('train_loss', None),
+                        'valid_loss': data.get('valid_loss', None),
+                        'train_mean_token_accuracy': data.get('train_mean_token_accuracy', None),
+                        'valid_mean_token_accuracy': data.get('valid_mean_token_accuracy', None)
+                    })
+                if data.get('epoch') is not None:  # Epoch metrics
+                    epoch_metrics.append({
+                        'epoch': data.get('epoch', None),
+                        'train_loss': data.get('train_loss', None),
+                        'valid_loss': data.get('valid_loss', None),
+                        'train_mean_token_accuracy': data.get('train_mean_token_accuracy', None),
+                        'valid_mean_token_accuracy': data.get('valid_mean_token_accuracy', None)
+                    })
         
-        return pd.DataFrame(metrics_data)
+        return pd.DataFrame(step_metrics), pd.DataFrame(epoch_metrics)
 
-    def plot_training_metrics(self, job_id: str, figsize: tuple = (12, 6)) -> None:
+    def plot_training_metrics(self, job_id: str, figsize: tuple = (12, 12)) -> None:
         """
         Plot training metrics for a fine-tuning job
         Args:
             job_id: ID of fine-tuning job
             figsize: Size of the figure (width, height)
         """
-        df = self.get_training_metrics(job_id)
+        step_df, epoch_df = self.get_training_metrics(job_id)
         
         plt.figure(figsize=figsize)
         
-        # Plot losses
-        plt.subplot(1, 2, 1)
-        plt.plot(df['step'], df['train_loss'], label='Training Loss')
-        plt.plot(df['step'], df['valid_loss'], label='Validation Loss')
+        # Plot step-based metrics
+        # Loss by step
+        plt.subplot(2, 2, 1)
+        plt.plot(step_df['step'], step_df['train_loss'], label='Training Loss')
+        plt.plot(step_df['step'], step_df['valid_loss'], label='Validation Loss')
         plt.xlabel('Step')
         plt.ylabel('Loss')
-        plt.title('Training and Validation Loss')
+        plt.title('Loss by Step')
         plt.legend()
         plt.grid(True)
         
-        # Plot accuracies
-        plt.subplot(1, 2, 2)
-        plt.plot(df['step'], df['train_mean_token_accuracy'], 
+        # Accuracy by step
+        plt.subplot(2, 2, 2)
+        plt.plot(step_df['step'], step_df['train_mean_token_accuracy'], 
                 label='Training Accuracy')
-        plt.plot(df['step'], df['valid_mean_token_accuracy'], 
+        plt.plot(step_df['step'], step_df['valid_mean_token_accuracy'], 
                 label='Validation Accuracy')
         plt.xlabel('Step')
         plt.ylabel('Token Accuracy')
-        plt.title('Training and Validation Accuracy')
+        plt.title('Accuracy by Step')
         plt.legend()
         plt.grid(True)
+        
+        # Plot epoch-based metrics if available
+        if not epoch_df.empty:
+            # Loss by epoch
+            plt.subplot(2, 2, 3)
+            plt.plot(epoch_df['epoch'], epoch_df['train_loss'], label='Training Loss')
+            plt.plot(epoch_df['epoch'], epoch_df['valid_loss'], label='Validation Loss')
+            plt.xlabel('Epoch')
+            plt.ylabel('Loss')
+            plt.title('Loss by Epoch')
+            plt.legend()
+            plt.grid(True)
+            
+            # Accuracy by epoch
+            plt.subplot(2, 2, 4)
+            plt.plot(epoch_df['epoch'], epoch_df['train_mean_token_accuracy'], 
+                    label='Training Accuracy')
+            plt.plot(epoch_df['epoch'], epoch_df['valid_mean_token_accuracy'], 
+                    label='Validation Accuracy')
+            plt.xlabel('Epoch')
+            plt.ylabel('Token Accuracy')
+            plt.title('Accuracy by Epoch')
+            plt.legend()
+            plt.grid(True)
         
         plt.tight_layout()
         plt.show()
