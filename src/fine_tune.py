@@ -103,15 +103,27 @@ class FineTuner:
         # Calculate estimated completion time
         if hasattr(status, 'created_at') and hasattr(status, 'hyperparameters'):
             start_time = datetime.fromtimestamp(status.created_at)
-            n_epochs = int(status.hyperparameters.n_epochs)
-            # Estimate: tokens/1000 * epochs = minutes
-            est_minutes = (status.trained_tokens / 1000) * n_epochs
-            est_completion = start_time + timedelta(minutes=est_minutes)
             
-            print(f"Status: {status.status}")
-            print(f"Model: {status.model}")
-            print(f"Started at: {start_time}")
-            print(f"Estimated completion: {est_completion}")
+            # Handle 'auto' epochs setting
+            n_epochs = status.hyperparameters.n_epochs
+            if n_epochs == 'auto':
+                n_epochs = 3  # Default estimate for auto mode
+            else:
+                n_epochs = int(n_epochs)
+                
+            # Estimate: tokens/1000 * epochs = minutes
+            if hasattr(status, 'trained_tokens'):
+                est_minutes = (status.trained_tokens / 1000) * n_epochs
+                est_completion = start_time + timedelta(minutes=est_minutes)
+                
+                print(f"Status: {status.status}")
+                print(f"Model: {status.model}")
+                print(f"Started at: {start_time}")
+                print(f"Estimated completion: {est_completion}")
+            else:
+                print(f"Status: {status.status}")
+                print(f"Model: {status.model}")
+                print(f"Started at: {start_time}")
             print(status.hyperparameters)
         else:
             print(f"Status: {status.status}")
