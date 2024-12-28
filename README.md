@@ -1,6 +1,6 @@
-# Fine-Tune 4o: Custom GPT Model Training Pipeline
+# Fine-Tune 4o: Custom LLM Training Pipeline
 
-A robust Python-based pipeline for fine-tuning OpenAI models with a focus on Direct Preference Optimization (DPO). This project provides a streamlined workflow for training, evaluating, and deploying custom language models.
+A robust Python-based pipeline for fine-tuning OpenAI models using Supervised Fine Tuning (SFT) and Direct Preference Optimization (DPO). This project provides a streamlined workflow for training, evaluating, and deploying custom language models.
 
 ## 🌟 Key Features
 
@@ -8,7 +8,6 @@ A robust Python-based pipeline for fine-tuning OpenAI models with a focus on Dir
 - Support for Direct Preference Optimization (DPO)
 - Real-time training metrics and visualization
 - Flexible model evaluation and comparison
-- Built-in token counting and cost estimation
 
 ## 🏗️ Project Structure
 
