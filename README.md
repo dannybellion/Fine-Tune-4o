@@ -2,6 +2,8 @@
 
 A robust Python-based pipeline for fine-tuning OpenAI models using Supervised Fine Tuning (SFT) and Direct Preference Optimization (DPO). This project provides a streamlined workflow for training, evaluating, and deploying custom language models.
 
+Follow along in `notebook.ipynb` for a step-by-step process.
+
 ## 🌟 Key Features
 
 - Automated fine-tuning pipeline with OpenAI's API
